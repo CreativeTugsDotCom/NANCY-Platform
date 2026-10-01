@@ -1,0 +1,2382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NANCY - Mobile UX Wireframe & Architecture System</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Custom Scrollbar for wireframe preview */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+
+    /* Device Mockup Shadow & Frame */
+    .iphone-frame {
+      width: 390px;
+      height: 812px;
+      border: 12px solid #334155;
+      border-radius: 48px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(59, 130, 246, 0.15);
+      position: relative;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+
+    .iphone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 160px;
+      height: 28px;
+      background-color: #334155;
+      border-bottom-left-radius: 18px;
+      border-bottom-right-radius: 18px;
+      z-index: 50;
+    }
+
+    .wireframe-grid {
+      background-size: 20px 20px;
+      background-image: 
+        linear-gradient(to right, rgba(203, 213, 225, 0.2) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(203, 213, 225, 0.2) 1px, transparent 1px);
+    }
+
+    /* Pulse animation for map markers */
+    @keyframes ping-slow {
+      0% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.4); opacity: 0.3; }
+      100% { transform: scale(1); opacity: 0.8; }
+    }
+    .marker-pulse {
+      animation: ping-slow 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+  <!-- TOP HEADER / CONTROL BAR -->
+  <header class="h-16 bg-slate-900 border-b border-slate-800 px-6 flex items-center justify-between z-30 shrink-0">
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white tracking-widest">N</div>
+        <div>
+          <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+            NANCY <span class="text-xs px-2 py-0.5 bg-blue-900/60 text-blue-300 border border-blue-700/50 rounded-full font-normal">v1.0 Wireframe</span>
+          </h1>
+          <p class="text-xs text-slate-400">Transit + City Discovery + Astrocartography Synergy Platform</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Flow & Mode Indicator -->
+    <div class="hidden lg:flex items-center space-x-3 bg-slate-800/80 px-4 py-1.5 rounded-full border border-slate-700">
+      <span class="text-xs text-slate-400 font-medium">Active Flow:</span>
+      <span id="active-flow-label" class="text-xs font-semibold text-blue-400">Manual Screen Select</span>
+      <span class="text-slate-600">|</span>
+      <button onclick="toggleAnnotations()" id="anno-toggle-btn" class="text-xs px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 transition font-mono">
+        Backend Specs: ON
+      </button>
+      <button onclick="switchView('app')" id="app-view-btn" class="text-xs px-2 py-0.5 rounded bg-blue-600 text-white font-medium">
+        Mobile Frame
+      </button>
+      <button onclick="switchView('admin')" id="admin-view-btn" class="text-xs px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium">
+        Admin Portal
+      </button>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="flex items-center space-x-3">
+      <button onclick="togglePaywallState()" id="user-tier-badge" class="px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs rounded-lg font-medium hover:bg-amber-500/20 transition flex items-center gap-1.5">
+        <i data-lucide="crown" class="w-3.5 h-3.5"></i>
+        <span>User Status: <strong id="user-tier-text">Free Plan</strong> (Click to Toggle)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE CONTENT -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- LEFT SIDEBAR: NAVIGATOR & FLOW CONTROLLER -->
+    <aside class="w-80 bg-slate-900 border-r border-slate-800 flex flex-col overflow-hidden shrink-0">
+      
+      <!-- FLOW PRESETS -->
+      <div class="p-4 border-b border-slate-800">
+        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <i data-lucide="git-branch" class="w-3.5 h-3.5 text-blue-400"></i> Core User Flows
+        </h2>
+        <div class="grid grid-cols-2 gap-1.5 text-xs">
+          <button onclick="runFlow('A')" class="p-2 bg-slate-800/80 hover:bg-blue-900/30 hover:border-blue-700/50 border border-slate-700 rounded text-left transition">
+            <div class="font-semibold text-slate-200">Flow A</div>
+            <div class="text-[10px] text-slate-400">New User Onboarding</div>
+          </button>
+          <button onclick="runFlow('B')" class="p-2 bg-slate-800/80 hover:bg-blue-900/30 hover:border-blue-700/50 border border-slate-700 rounded text-left transition">
+            <div class="font-semibold text-slate-200">Flow B</div>
+            <div class="text-[10px] text-slate-400">Returning User Login</div>
+          </button>
+          <button onclick="runFlow('C')" class="p-2 bg-slate-800/80 hover:bg-blue-900/30 hover:border-blue-700/50 border border-slate-700 rounded text-left transition">
+            <div class="font-semibold text-slate-200">Flow C</div>
+            <div class="text-[10px] text-slate-400">Transit Route Lookup</div>
+          </button>
+          <button onclick="runFlow('D')" class="p-2 bg-slate-800/80 hover:bg-blue-900/30 hover:border-blue-700/50 border border-slate-700 rounded text-left transition">
+            <div class="font-semibold text-slate-200">Flow D</div>
+            <div class="text-[10px] text-slate-400">City Discovery Map</div>
+          </button>
+          <button onclick="runFlow('E')" class="p-2 bg-slate-800/80 hover:bg-amber-900/30 hover:border-amber-700/50 border border-slate-700 rounded text-left transition col-span-2">
+            <div class="font-semibold text-amber-300 flex items-center justify-between">
+              <span>Flow E: Astro Synergy Calc & Paywall</span>
+              <i data-lucide="sparkles" class="w-3 h-3 text-amber-400"></i>
+            </div>
+            <div class="text-[10px] text-slate-400">Calculations -> Premium Paywall -> Unlock</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- SCREEN CATALOG SEARCH & LIST -->
+      <div class="p-3 border-b border-slate-800">
+        <input type="text" id="screen-search" oninput="filterScreens()" placeholder="Filter 32 screens & system states..." class="w-full bg-slate-950 text-xs px-3 py-2 rounded border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 space-y-4 text-xs" id="screen-catalog">
+        
+        <!-- Onboarding & Auth -->
+        <div>
+          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 px-1">01. Authentication & Onboarding</div>
+          <div class="space-y-1">
+            <button onclick="showScreen('s01')" id="nav-s01" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>01. Splash Screen</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s01</span>
+            </button>
+            <button onclick="showScreen('s02')" id="nav-s02" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>02. Onboarding 01 (Value)</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s02</span>
+            </button>
+            <button onclick="showScreen('s03')" id="nav-s03" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>03. Onboarding 02 (Transit)</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s03</span>
+            </button>
+            <button onclick="showScreen('s04')" id="nav-s04" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>04. Onboarding 03 (Synergy)</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s04</span>
+            </button>
+            <button onclick="showScreen('s05')" id="nav-s05" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>05. Login Screen</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s05</span>
+            </button>
+            <button onclick="showScreen('s06')" id="nav-s06" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>06. Sign Up Screen</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s06</span>
+            </button>
+            <button onclick="showScreen('s07')" id="nav-s07" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>07. Forgot Password</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s07</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Hub & Discovery -->
+        <div>
+          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 px-1">02. Main Core Hub</div>
+          <div class="space-y-1">
+            <button onclick="showScreen('s08')" id="nav-s08" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>08. Home Dashboard</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s08</span>
+            </button>
+            <button onclick="showScreen('s09')" id="nav-s09" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>09. Explore Map Hub</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s09</span>
+            </button>
+            <button onclick="showScreen('s10')" id="nav-s10" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>10. Location Detail Card</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s10</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Transit Engine -->
+        <div>
+          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 px-1">03. Transit & Mobility</div>
+          <div class="space-y-1">
+            <button onclick="showScreen('s11')" id="nav-s11" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>11. Transit Home / Search</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s11</span>
+            </button>
+            <button onclick="showScreen('s12')" id="nav-s12" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>12. Train Schedule Results</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s12</span>
+            </button>
+            <button onclick="showScreen('s13')" id="nav-s13" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>13. Bus Schedule Results</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s13</span>
+            </button>
+            <button onclick="showScreen('s14')" id="nav-s14" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>14. Route Details & Stops</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s14</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Astro & City Synergy -->
+        <div>
+          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 px-1 text-amber-400">04. Astrocartography & Synergy Engine</div>
+          <div class="space-y-1">
+            <button onclick="showScreen('s15')" id="nav-s15" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>15. City Analysis Intro</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s15</span>
+            </button>
+            <button onclick="showScreen('s16')" id="nav-s16" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>16. Personal Info Input</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s16</span>
+            </button>
+            <button onclick="showScreen('s17')" id="nav-s17" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>17. Target City Input</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s17</span>
+            </button>
+            <button onclick="showScreen('s18')" id="nav-s18" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>18. Astro Map Results</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s18</span>
+            </button>
+            <button onclick="showScreen('s19')" id="nav-s19" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>19. City Synergy Breakdown</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s19</span>
+            </button>
+            <button onclick="showScreen('s20')" id="nav-s20" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>20. City Comparison Matrix</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s20</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Monetization & Subscription -->
+        <div>
+          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 px-1">05. Monetization & Checkout</div>
+          <div class="space-y-1">
+            <button onclick="showScreen('s21')" id="nav-s21" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>21. Premium Paywall Guard</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s21</span>
+            </button>
+            <button onclick="showScreen('s22')" id="nav-s22" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>22. Subscription Plans</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s22</span>
+            </button>
+            <button onclick="showScreen('s23')" id="nav-s23" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>23. In-App Checkout UI</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s23</span>
+            </button>
+            <button onclick="showScreen('s24')" id="nav-s24" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>24. Purchase Success State</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s24</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Account, Subscriber & Utilities -->
+        <div>
+          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 px-1">06. Account & Management</div>
+          <div class="space-y-1">
+            <button onclick="showScreen('s25')" id="nav-s25" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>25. Subscriber Dashboard</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s25</span>
+            </button>
+            <button onclick="showScreen('s26')" id="nav-s26" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>26. Profile Overview</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s26</span>
+            </button>
+            <button onclick="showScreen('s27')" id="nav-s27" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>27. Manage Subscription</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s27</span>
+            </button>
+            <button onclick="showScreen('s28')" id="nav-s28" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>28. Saved Locations</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s28</span>
+            </button>
+            <button onclick="showScreen('s29')" id="nav-s29" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>29. Saved Routes</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s29</span>
+            </button>
+            <button onclick="showScreen('s30')" id="nav-s30" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>30. Notifications Center</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s30</span>
+            </button>
+            <button onclick="showScreen('s31')" id="nav-s31" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>31. App Settings</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s31</span>
+            </button>
+            <button onclick="showScreen('s32')" id="nav-s32" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>32. Help & Support</span>
+              <span class="text-[10px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">s32</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mandatory System States -->
+        <div>
+          <div class="text-[10px] font-bold text-rose-400 uppercase tracking-wider mb-1.5 px-1">07. Mandatory System States</div>
+          <div class="space-y-1">
+            <button onclick="showScreen('state-loading')" id="nav-state-loading" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>State: Calculation Loading</span>
+              <span class="text-[10px] bg-rose-950 text-rose-400 px-1.5 py-0.5 rounded">SYS</span>
+            </button>
+            <button onclick="showScreen('state-empty')" id="nav-state-empty" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>State: Empty Saved Cities</span>
+              <span class="text-[10px] bg-rose-950 text-rose-400 px-1.5 py-0.5 rounded">SYS</span>
+            </button>
+            <button onclick="showScreen('state-error')" id="nav-state-error" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>State: API / Network Failure</span>
+              <span class="text-[10px] bg-rose-950 text-rose-400 px-1.5 py-0.5 rounded">SYS</span>
+            </button>
+            <button onclick="showScreen('state-permission')" id="nav-state-permission" class="screen-nav-btn w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between hover:bg-slate-800 text-slate-300">
+              <span>State: Location Permission Request</span>
+              <span class="text-[10px] bg-rose-950 text-rose-400 px-1.5 py-0.5 rounded">SYS</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- CENTER CANVAS: MOBILE FRAME VIEWPORT -->
+    <main id="app-viewport-container" class="flex-1 bg-slate-950 flex items-center justify-center p-6 overflow-y-auto relative">
+      
+      <!-- BACKGROUND DECORATIVE GRID -->
+      <div class="absolute inset-0 wireframe-grid opacity-20 pointer-events-none"></div>
+
+      <!-- IPHONE WIREFRAME CONTAINER -->
+      <div class="iphone-frame flex flex-col shrink-0 select-none">
+        
+        <!-- TOP HARDWARE NOTCH -->
+        <div class="iphone-notch"></div>
+
+        <!-- STATUS BAR -->
+        <div class="h-10 bg-slate-100 flex items-end justify-between px-6 pb-1 text-[11px] font-semibold text-slate-800 z-40 border-b border-slate-200">
+          <span>9:41</span>
+          <div class="flex items-center space-x-1.5">
+            <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+            <i data-lucide="battery" class="w-4 h-4"></i>
+          </div>
+        </div>
+
+        <!-- SCREEN CONTENT CONTAINER (32 SCREENS RENDERED HERE) -->
+        <div id="screen-viewport" class="flex-1 bg-slate-50 flex flex-col overflow-hidden relative">
+          <!-- Dynamic screen HTML inserted via JavaScript -->
+        </div>
+
+        <!-- BOTTOM APP NAVIGATION BAR (PERSISTENT ON CORE HUB SCREENS) -->
+        <nav id="app-bottom-nav" class="h-16 bg-white border-t border-slate-200 flex items-center justify-around text-[10px] font-medium text-slate-500 z-40 shrink-0">
+          <button onclick="showScreen('s08')" id="tab-home" class="flex flex-col items-center justify-center w-full h-full text-blue-600">
+            <i data-lucide="home" class="w-5 h-5 mb-0.5"></i>
+            <span>Home</span>
+          </button>
+          <button onclick="showScreen('s09')" id="tab-explore" class="flex flex-col items-center justify-center w-full h-full hover:text-slate-900">
+            <i data-lucide="map" class="w-5 h-5 mb-0.5"></i>
+            <span>Explore</span>
+          </button>
+          <button onclick="showScreen('s11')" id="tab-transit" class="flex flex-col items-center justify-center w-full h-full hover:text-slate-900">
+            <i data-lucide="bus" class="w-5 h-5 mb-0.5"></i>
+            <span>Transit</span>
+          </button>
+          <button onclick="showScreen('s15')" id="tab-synergy" class="flex flex-col items-center justify-center w-full h-full hover:text-slate-900">
+            <i data-lucide="compass" class="w-5 h-5 mb-0.5 text-amber-500"></i>
+            <span class="text-amber-600 font-semibold">Synergy</span>
+          </button>
+          <button onclick="showScreen('s26')" id="tab-profile" class="flex flex-col items-center justify-center w-full h-full hover:text-slate-900">
+            <i data-lucide="user" class="w-5 h-5 mb-0.5"></i>
+            <span>Profile</span>
+          </button>
+        </nav>
+
+        <!-- HOME INDICATOR BAR -->
+        <div class="h-4 bg-white flex items-center justify-center pb-1 z-40 shrink-0">
+          <div class="w-32 h-1 bg-slate-300 rounded-full"></div>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- RIGHT PANEL: TECHNICAL SPECIFICATIONS & BACKEND INTEGRATIONS -->
+    <aside id="technical-spec-panel" class="w-96 bg-slate-900 border-l border-slate-800 p-5 flex flex-col overflow-y-auto shrink-0">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+          <i data-lucide="cpu" class="w-4 h-4 text-emerald-400"></i> Tech & API Architecture
+        </h3>
+        <span id="screen-id-tag" class="text-[11px] font-mono px-2 py-0.5 bg-slate-800 text-slate-300 rounded border border-slate-700">Screen 01</span>
+      </div>
+
+      <!-- Current Screen Name & Purpose -->
+      <div class="mb-5">
+        <h4 id="spec-title" class="text-sm font-bold text-white mb-1">01. Splash Screen</h4>
+        <p id="spec-purpose" class="text-xs text-slate-400 leading-relaxed">
+          Initial application load state. Handles token verification, local session check, and preload assets.
+        </p>
+      </div>
+
+      <!-- Backend & API Dependencies Tag Cloud -->
+      <div class="mb-5">
+        <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">Required Integrations & APIs</div>
+        <div id="spec-apis" class="flex flex-wrap gap-1.5">
+          <span class="text-[10px] font-mono bg-blue-950 text-blue-300 px-2 py-0.5 rounded border border-blue-800">Auth Token Check</span>
+          <span class="text-[10px] font-mono bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800">App Version Sync</span>
+        </div>
+      </div>
+
+      <!-- Data Model & UI Inputs -->
+      <div class="mb-5">
+        <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">Data Contract / Inputs</div>
+        <div id="spec-inputs" class="text-xs font-mono bg-slate-950 p-3 rounded border border-slate-800 text-slate-300 space-y-1">
+          <div>- JWT Session Token</div>
+          <div>- Network State Check</div>
+        </div>
+      </div>
+
+      <!-- Key User Actions & Edge Cases -->
+      <div class="mb-5">
+        <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">UX & Edge Case Rules</div>
+        <ul id="spec-rules" class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+          <li>If valid token exists -> Auto-redirect to Home (s08).</li>
+          <li>If unauthenticated -> Direct to Onboarding (s02).</li>
+          <li>Timeout error -> Show offline reconnect banner.</li>
+        </ul>
+      </div>
+
+      <!-- Navigation Hierarchy Trace -->
+      <div class="mt-auto pt-4 border-t border-slate-800">
+        <div class="text-[10px] font-bold uppercase text-slate-500 mb-1">Navigation Trace</div>
+        <div id="spec-trace" class="text-xs font-mono text-blue-400">
+          Root -> Splash -> [Onboarding / Home]
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- CONCEPTUAL ADMIN DASHBOARD VIEW (HIDDEN BY DEFAULT) -->
+  <div id="admin-portal-container" class="hidden flex-1 bg-slate-950 p-8 overflow-y-auto">
+    <div class="max-w-6xl mx-auto space-y-6">
+      
+      <!-- Admin Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-5">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i> NANCY Business & Platform Administration
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Conceptual Backend Control Center for Data Sources, Users, Subscriptions & Astro Engines</p>
+        </div>
+        <button onclick="switchView('app')" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium">
+          ← Back to Mobile Prototype
+        </button>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <div class="text-xs font-medium text-slate-400">Total Active Users</div>
+          <div class="text-2xl font-bold text-white mt-1">42,850</div>
+          <div class="text-[10px] text-emerald-400 mt-1">↑ +14% this month</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <div class="text-xs font-medium text-slate-400">Paid Subscribers</div>
+          <div class="text-2xl font-bold text-amber-400 mt-1">6,120</div>
+          <div class="text-[10px] text-amber-400/80 mt-1">14.2% Conversion Rate</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <div class="text-xs font-medium text-slate-400">Transit Queries / Day</div>
+          <div class="text-2xl font-bold text-blue-400 mt-1">184,300</div>
+          <div class="text-[10px] text-slate-400 mt-1">GTFS Feeds Active</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <div class="text-xs font-medium text-slate-400">Astro Synergy Calcs</div>
+          <div class="text-2xl font-bold text-emerald-400 mt-1">89,400</div>
+          <div class="text-[10px] text-emerald-400 mt-1">Engine Latency: 120ms</div>
+        </div>
+      </div>
+
+      <!-- Modules Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Module 1: Subscription Tier Management -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+          <h3 class="text-sm font-bold text-white flex items-center justify-between">
+            <span>Subscription & Tier Controls</span>
+            <i data-lucide="credit-card" class="w-4 h-4 text-blue-400"></i>
+          </h3>
+          <p class="text-xs text-slate-400">Manage plan pricing placeholders, paywall gates, and feature access permissions.</p>
+          <div class="space-y-2 text-xs">
+            <div class="p-2.5 bg-slate-950 rounded border border-slate-800 flex justify-between items-center">
+              <div>
+                <div class="font-medium text-slate-200">Free Tier</div>
+                <div class="text-[10px] text-slate-500">Maps, Basic Transit Schedules, 1 Saved City</div>
+              </div>
+              <span class="text-xs font-mono text-slate-400">Active</span>
+            </div>
+            <div class="p-2.5 bg-slate-950 rounded border border-amber-900/50 flex justify-between items-center">
+              <div>
+                <div class="font-medium text-amber-300">Premium Pro Plan</div>
+                <div class="text-[10px] text-slate-500">Full Synergy Score, Unlimited Astro Lines, Bus/Train Realtime</div>
+              </div>
+              <span class="text-xs font-mono text-amber-400">$9.99/mo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Module 2: GTFS Transit Feeds -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+          <h3 class="text-sm font-bold text-white flex items-center justify-between">
+            <span>GTFS Transit Integrations</span>
+            <i data-lucide="bus" class="w-4 h-4 text-blue-400"></i>
+          </h3>
+          <p class="text-xs text-slate-400">Status of regional train and bus schedule APIs, real-time delays, and route data.</p>
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between p-2 bg-slate-950 rounded">
+              <span class="text-slate-300">Amtrak / National Rail Feed</span>
+              <span class="text-emerald-400 text-[10px] font-mono">CONNECTED</span>
+            </div>
+            <div class="flex items-center justify-between p-2 bg-slate-950 rounded">
+              <span class="text-slate-300">FlixBus / Regional Bus Feed</span>
+              <span class="text-emerald-400 text-[10px] font-mono">CONNECTED</span>
+            </div>
+            <div class="flex items-center justify-between p-2 bg-slate-950 rounded">
+              <span class="text-slate-300">EuroRail & European Transit</span>
+              <span class="text-amber-400 text-[10px] font-mono">SYNCING</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Module 3: Astro Engine & City DB -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+          <h3 class="text-sm font-bold text-white flex items-center justify-between">
+            <span>Astro Engine & City DB</span>
+            <i data-lucide="compass" class="w-4 h-4 text-amber-400"></i>
+          </h3>
+          <p class="text-xs text-slate-400">Configure planetary ephemeris calculation services and city coordinate mapping.</p>
+          <div class="space-y-2 text-xs">
+            <div class="p-2 bg-slate-950 rounded text-slate-300 flex justify-between">
+              <span>Indexed Cities</span>
+              <span class="font-mono text-blue-400">14,250 Cities</span>
+            </div>
+            <div class="p-2 bg-slate-950 rounded text-slate-300 flex justify-between">
+              <span>Swiss Ephemeris Provider</span>
+              <span class="font-mono text-emerald-400">API Active v2.4</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT SCREEN CONTROLLER & WIREFRAME GENERATOR -->
+  <script>
+    // GLOBAL APP STATE
+    let currentScreenId = 's01';
+    let isUserPaidSubscriber = false;
+    let showTechAnnotations = true;
+
+    // SCREEN SPECIFICATIONS DATABASE
+    const screenSpecs = {
+      's01': {
+        title: '01. Splash Screen',
+        purpose: 'Brand introduction and session initiation.',
+        apis: ['Auth Session Token Validation', 'App Config API'],
+        inputs: ['Stored Auth Token', 'Device ID'],
+        rules: ['Show loading spinner', 'Route to Onboarding or Home based on auth token'],
+        trace: 'App Launch -> Splash -> [Onboarding / Home]'
+      },
+      's02': {
+        title: '02. Onboarding 01 — Value Prop',
+        purpose: 'Introduce unique value proposition: Cities + Transit + Astro Synergy.',
+        apis: ['Analytics Event Tracker'],
+        inputs: ['Skip / Continue Actions'],
+        rules: ['Swipe or press Next to view Transit onboarding'],
+        trace: 'Splash -> Onboarding 01'
+      },
+      's03': {
+        title: '03. Onboarding 02 — Transit & Maps',
+        purpose: 'Highlight interactive city transit and schedule lookup capabilities.',
+        apis: ['Location Permissions Request'],
+        inputs: ['Continue Action'],
+        rules: ['Explain map integration & schedules'],
+        trace: 'Onboarding 01 -> Onboarding 02'
+      },
+      's04': {
+        title: '04. Onboarding 03 — Astro Synergy',
+        purpose: 'Introduce personalized city synergy calculations & astrocartography.',
+        apis: ['Analytics Setup'],
+        inputs: ['Get Started Action'],
+        rules: ['Direct to Login/Sign Up or Guest Dashboard'],
+        trace: 'Onboarding 02 -> Onboarding 03 -> Auth Hub'
+      },
+      's05': {
+        title: '05. Login Screen',
+        purpose: 'Secure authentication for existing users and subscribers.',
+        apis: ['POST /api/v1/auth/login', 'OAuth2 Social Sign-In'],
+        inputs: ['Email', 'Password', 'Remember Me'],
+        rules: ['Validate email format', 'Return JWT token upon success', 'Show subscriber unlock message'],
+        trace: 'Auth -> Login -> Home Dashboard'
+      },
+      's06': {
+        title: '06. Sign Up Screen',
+        purpose: 'User account creation with birth data setup.',
+        apis: ['POST /api/v1/auth/register', 'Geolocation API'],
+        inputs: ['First Name', 'Last Name', 'Email', 'Password', 'DOB/Birth Location (Optional)'],
+        rules: ['Password strength check', 'Terms of service consent check'],
+        trace: 'Auth -> Sign Up -> Home Dashboard'
+      },
+      's07': {
+        title: '07. Forgot Password',
+        purpose: 'Self-service account recovery flow.',
+        apis: ['POST /api/v1/auth/forgot-password'],
+        inputs: ['Email Address'],
+        rules: ['Send secure reset OTP / link', 'Show confirmation feedback'],
+        trace: 'Login -> Forgot Password -> Email Confirmation'
+      },
+      's08': {
+        title: '08. Home Dashboard',
+        purpose: 'Personalized central hub with quick actions, recommendations, and transit snapshot.',
+        apis: ['GET /api/v1/user/dashboard', 'GET /api/v1/recommendations'],
+        inputs: ['User Profile Data', 'Saved Cities List'],
+        rules: ['Display personalized greeting', 'Show synergy card if calculation complete', 'Display paywall CTA for non-subscribers'],
+        trace: 'Login -> Home Dashboard'
+      },
+      's09': {
+        title: '09. Explore Map Hub',
+        purpose: 'Full-screen map with category filters for transit, cities, and synergy spots.',
+        apis: ['Maps Vector Tiles API', 'GET /api/v1/locations/map-markers'],
+        inputs: ['Map Bounding Box', 'Active Category Filters (Cities, Train, Bus)'],
+        rules: ['Selecting pin opens Screen 10 Location Sheet', 'Filter toggle updates pin markers'],
+        trace: 'Home -> Explore Map'
+      },
+      's10': {
+        title: '10. Location Detail Sheet',
+        purpose: 'Comprehensive details for a selected city including transit availability and synergy teaser.',
+        apis: ['GET /api/v1/cities/{id}', 'GET /api/v1/transit/summary'],
+        inputs: ['Selected City ID'],
+        rules: ['Show train/bus availability', 'Show synergy score (or locked paywall badge if free tier)'],
+        trace: 'Explore Map -> Location Detail -> [Analyze City / Transit]'
+      },
+      's11': {
+        title: '11. Transit Home / Search',
+        purpose: 'Route and schedule search for trains and regional buses.',
+        apis: ['GET /api/v1/transit/autocomplete', 'GTFS Schedules API'],
+        inputs: ['Origin City', 'Destination City', 'Date', 'Mode (Train/Bus)'],
+        rules: ['Swap Origin/Destination button', 'Autocomplete input for station names'],
+        trace: 'Home -> Transit Home -> Schedule Results'
+      },
+      's12': {
+        title: '12. Train Schedule Results',
+        purpose: 'List of available train departure times, durations, and stop details.',
+        apis: ['GET /api/v1/transit/schedules/trains'],
+        inputs: ['Filter: Departure Time', 'Filter: Direct / Stops'],
+        rules: ['Display delay status in real-time if available', 'Clicking card opens Route Details (s14)'],
+        trace: 'Transit Search -> Train Schedule'
+      },
+      's13': {
+        title: '13. Bus Schedule Results',
+        purpose: 'List of regional bus connections and schedules.',
+        apis: ['GET /api/v1/transit/schedules/buses'],
+        inputs: ['Filter: Operator', 'Filter: Price/Duration'],
+        rules: ['Display operator brand/badge and stop count'],
+        trace: 'Transit Search -> Bus Schedule'
+      },
+      's14': {
+        title: '14. Route Details & Stops',
+        purpose: 'Interactive visual path map with stop-by-stop schedule breakdown.',
+        apis: ['GET /api/v1/transit/routes/{id}'],
+        inputs: ['Save Route Action', 'Share Route Action'],
+        rules: ['Display origin to destination polylines on mini map'],
+        trace: 'Schedule Results -> Route Details'
+      },
+      's15': {
+        title: '15. City Analysis Intro',
+        purpose: 'Explainer for astrocartography city synergy feature with CTA.',
+        apis: ['GET /api/v1/astro/info'],
+        inputs: ['Start Analysis Button'],
+        rules: ['Explain non-medical nature of analysis', 'Prompt user for birth details'],
+        trace: 'Home -> Synergy Tab -> Analysis Intro'
+      },
+      's16': {
+        title: '16. Personal Information Input',
+        purpose: 'Form to capture precise birth date, exact time, and birth location for calculation.',
+        apis: ['Astro Ephemeris Geo-Time Converter API'],
+        inputs: ['Full Name', 'Birth Date', 'Exact Time of Birth', 'Birth Place Autocomplete'],
+        rules: ['Validation: Exact time required for accurate line positioning', 'Birth place autocomplete via Google Places'],
+        trace: 'Analysis Intro -> Personal Info Input -> City Input'
+      },
+      's17': {
+        title: '17. Target City Selection',
+        purpose: 'Choose target cities to compute synergy scores against birth data.',
+        apis: ['GET /api/v1/cities/search'],
+        inputs: ['City Search Keywords', 'Selected Cities Array (Max 4)'],
+        rules: ['Allow current location auto-select', 'Proceed to Astro Results'],
+        trace: 'Personal Info -> City Input -> Calculation Engine'
+      },
+      's18': {
+        title: '18. Astrocartography Results Map',
+        purpose: 'Visual map rendering planetary lines (Sun, Venus, Jupiter) overlaid on target locations.',
+        apis: ['Astro Line Overlay Rendering Engine'],
+        inputs: ['Birth Chart Data', 'Target Map Coordinates'],
+        rules: ['Displays interactive planetary lines', 'Free users see teaser; full details locked behind Paywall (s21)'],
+        trace: 'City Input -> Astro Map Results'
+      },
+      's19': {
+        title: '19. City Synergy Score Breakdown',
+        purpose: 'Detailed multi-category breakdown score (Career, Peace, Creative) for a chosen city.',
+        apis: ['POST /api/v1/astro/calculate-synergy'],
+        inputs: ['City ID', 'User Astro Profile'],
+        rules: ['Renders overall percentage score', 'Displays key considerations & strengths'],
+        trace: 'Astro Map -> City Synergy Score'
+      },
+      's20': {
+        title: '20. City Comparison Matrix',
+        purpose: 'Side-by-side comparison of 2-4 selected cities for transit, synergy, and lifestyle.',
+        apis: ['POST /api/v1/cities/compare'],
+        inputs: ['Array of Selected City IDs'],
+        rules: ['Horizontal scroll matrix', 'Highlights top scoring city'],
+        trace: 'Synergy Score -> City Comparison'
+      },
+      's21': {
+        title: '21. Premium Paywall Guard',
+        purpose: 'Conversion screen gating full astro analysis and saved synergy scores.',
+        apis: ['GET /api/v1/subscriptions/tiers'],
+        inputs: ['Unlock Premium CTA'],
+        rules: ['Highlights locked features', 'Directs user to Subscription Plans (s22)'],
+        trace: 'Protected Feature -> Premium Paywall Guard'
+      },
+      's22': {
+        title: '22. Subscription Plan Selection',
+        purpose: 'Presents Monthly vs Annual paid membership options.',
+        apis: ['StoreKit / Google Play Billing Catalog'],
+        inputs: ['Selected Plan ID (Monthly / Yearly)'],
+        rules: ['Highlight savings badge on annual option'],
+        trace: 'Paywall Guard -> Subscription Plans -> Checkout'
+      },
+      's23': {
+        title: '23. In-App Purchase Checkout',
+        purpose: 'Native Apple Pay / Google Pay / Credit Card checkout flow.',
+        apis: ['Apple Pay / Google Pay Native SDK', 'Stripe Payment Processing API'],
+        inputs: ['Payment Method Selection', 'Billing Address'],
+        rules: ['Show recurring payment terms', 'Execute transaction securely'],
+        trace: 'Plans -> Checkout -> Success State'
+      },
+      's24': {
+        title: '24. Purchase Success State',
+        purpose: 'Confirmation screen unlocking premium features immediately.',
+        apis: ['POST /api/v1/subscriptions/verify-receipt'],
+        inputs: ['Start Exploring Action'],
+        rules: ['Refresh user auth state to Paid Subscriber', 'Redirect to Subscriber Dashboard (s25)'],
+        trace: 'Checkout -> Purchase Success -> Subscriber Dashboard'
+      },
+      's25': {
+        title: '25. Subscriber Dashboard',
+        purpose: 'Exclusive dashboard for active paid members showing unlimited tools and saved insights.',
+        apis: ['GET /api/v1/subscriber/portal'],
+        inputs: ['Saved Analyses', 'Saved City Radar'],
+        rules: ['Displays active membership tier badge', 'Direct access to full astro tools'],
+        trace: 'Login / Purchase Success -> Subscriber Dashboard'
+      },
+      's26': {
+        title: '26. User Profile',
+        purpose: 'User account details, saved routes, birth chart summary, and settings navigation.',
+        apis: ['GET /api/v1/user/profile'],
+        inputs: ['Edit Profile Photo', 'View Saved Items'],
+        rules: ['Displays subscription status badge'],
+        trace: 'Bottom Tab Profile -> Profile Screen'
+      },
+      's27': {
+        title: '27. Manage Subscription',
+        purpose: 'View renewal date, payment method, plan upgrade/downgrade, or cancellation.',
+        apis: ['GET/PUT /api/v1/subscriptions/manage'],
+        inputs: ['Cancel Subscription CTA', 'Upgrade Plan CTA'],
+        rules: ['Show warning confirmation modal before cancellation'],
+        trace: 'Profile -> Manage Subscription'
+      },
+      's28': {
+        title: '28. Saved Locations',
+        purpose: 'List of bookmarked cities, synergy scores, and quick action buttons.',
+        apis: ['GET/DELETE /api/v1/user/saved-cities'],
+        inputs: ['Open City', 'Compare Cities', 'Delete City'],
+        rules: ['Empty state shown if no locations saved (State Empty)'],
+        trace: 'Profile -> Saved Locations'
+      },
+      's29': {
+        title: '29. Saved Routes',
+        purpose: 'Bookmarked transit train and bus connections.',
+        apis: ['GET/DELETE /api/v1/user/saved-routes'],
+        inputs: ['View Route Details', 'Remove Route'],
+        rules: ['Shows real-time departure times for saved routes'],
+        trace: 'Profile -> Saved Routes'
+      },
+      's30': {
+        title: '30. Notifications Center',
+        purpose: 'Alerts for transit delays, recommended city matches, and subscription updates.',
+        apis: ['GET /api/v1/notifications'],
+        inputs: ['Mark as Read', 'Clear All'],
+        rules: ['Filter by Transit vs Astro Synergy updates'],
+        trace: 'Home / Profile -> Notifications Center'
+      },
+      's31': {
+        title: '31. App Settings',
+        purpose: 'Manage privacy preferences, location permissions, units, and security.',
+        apis: ['PUT /api/v1/user/settings'],
+        inputs: ['Push Toggles', 'Location Toggles', 'Units (km/mi)'],
+        rules: ['Account deletion action requires re-authentication confirmation'],
+        trace: 'Profile -> Settings'
+      },
+      's32': {
+        title: '32. Help & Support',
+        purpose: 'Customer service, FAQs, app feedback, and legal privacy links.',
+        apis: ['POST /api/v1/support/ticket'],
+        inputs: ['Support Query Search', 'Submit Feedback Form'],
+        rules: ['Provide direct contact option for subscribers'],
+        trace: 'Settings -> Help & Support'
+      },
+      'state-loading': {
+        title: 'State: Calculation Loading',
+        purpose: 'Skeleton / Spinner state while astrocartography planetary calculations execute.',
+        apis: ['Astro Calculation Engine API'],
+        inputs: ['Cancel Calculation CTA'],
+        rules: ['Show animated calculating planetary positions loader'],
+        trace: 'System State -> Loading'
+      },
+      'state-empty': {
+        title: 'State: Empty Saved Cities',
+        purpose: 'Empty placeholder screen when no cities or routes have been saved.',
+        apis: ['N/A'],
+        inputs: ['Explore Map CTA'],
+        rules: ['Guide user to explore cities to fill this list'],
+        trace: 'Saved Locations -> Empty State'
+      },
+      'state-error': {
+        title: 'State: API / Network Failure',
+        purpose: 'Graceful error handler state when server or connection drops.',
+        apis: ['System Error Interceptor'],
+        inputs: ['Retry Request CTA'],
+        rules: ['Provide actionable user feedback and offline cached options'],
+        trace: 'System State -> Error Handler'
+      },
+      'state-permission': {
+        title: 'State: Location Permission Request',
+        purpose: 'System modal requesting GPS access for map discovery and transit.',
+        apis: ['Mobile OS Permission Bridge'],
+        inputs: ['Allow Location', 'Deny Location'],
+        rules: ['Explain clear benefit of location access'],
+        trace: 'Explore Map -> Location Permission Prompt'
+      }
+    };
+
+    // RENDER SCREENS INSIDE THE WIREFRAME VIEWPORT
+    function renderScreen(screenId) {
+      currentScreenId = screenId;
+      const viewport = document.getElementById('screen-viewport');
+      
+      // Highlight active nav in sidebar
+      document.querySelectorAll('.screen-nav-btn').forEach(btn => btn.classList.remove('bg-blue-900/40', 'border-l-2', 'border-blue-500', 'text-blue-300'));
+      const activeNav = document.getElementById(`nav-${screenId}`);
+      if(activeNav) activeNav.classList.add('bg-blue-900/40', 'border-l-2', 'border-blue-500', 'text-blue-300');
+
+      // Update Spec Panel
+      updateSpecPanel(screenId);
+
+      // Render Screen Template
+      viewport.innerHTML = getScreenHTML(screenId);
+
+      // Re-initialize Lucide Icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    // UPDATE TECHNICAL SPECIFICATION PANEL
+    function updateSpecPanel(screenId) {
+      const spec = screenSpecs[screenId] || {
+        title: screenId,
+        purpose: 'Wireframe screen documentation state.',
+        apis: ['API Integration Pending'],
+        inputs: ['User Interaction Input'],
+        rules: ['Standard UI response'],
+        trace: 'Navigation Route'
+      };
+
+      document.getElementById('screen-id-tag').innerText = screenId.toUpperCase();
+      document.getElementById('spec-title').innerText = spec.title;
+      document.getElementById('spec-purpose').innerText = spec.purpose;
+      
+      // Render APIs
+      document.getElementById('spec-apis').innerHTML = spec.apis.map(api => 
+        `<span class="text-[10px] font-mono bg-blue-950 text-blue-300 px-2 py-0.5 rounded border border-blue-800/60">${api}</span>`
+      ).join('');
+
+      // Render Inputs
+      document.getElementById('spec-inputs').innerHTML = spec.inputs.map(input => 
+        `<div>• ${input}</div>`
+      ).join('');
+
+      // Render Rules
+      document.getElementById('spec-rules').innerHTML = spec.rules.map(rule => 
+        `<li>${rule}</li>`
+      ).join('');
+
+      // Render Trace
+      document.getElementById('spec-trace').innerText = spec.trace;
+    }
+
+    // TEMPLATE GENERATOR FOR ALL 32 SCREENS & STATES
+    function getScreenHTML(id) {
+      const lockOverlay = (!isUserPaidSubscriber && ['s18', 's19', 's20'].includes(id)) 
+        ? `<div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center">
+             <div class="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mb-3 border border-amber-500/40">
+               <i data-lucide="lock" class="w-6 h-6"></i>
+             </div>
+             <h4 class="text-sm font-bold text-white mb-1">Subscriber Locked Feature</h4>
+             <p class="text-xs text-slate-300 mb-4">Unlock complete Astro Synergy scores and city maps with NANCY Premium.</p>
+             <button onclick="showScreen('s21')" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-xs rounded-lg shadow-lg">
+               Unlock Premium Access
+             </button>
+           </div>`
+        : '';
+
+      switch(id) {
+        case 's01':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col items-center justify-center p-8 text-center relative">
+              <div class="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center font-bold text-3xl tracking-widest shadow-xl shadow-blue-600/30 mb-6 border border-blue-400/30">
+                N
+              </div>
+              <h2 class="text-2xl font-bold tracking-tight">NANCY</h2>
+              <p class="text-xs text-slate-400 mt-2 tracking-wide">Transit • Discovery • Astro Synergy</p>
+              
+              <div class="mt-16 flex flex-col items-center gap-3">
+                <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-[11px] font-mono text-slate-400">Verifying session & loading maps...</span>
+              </div>
+
+              <div class="absolute bottom-8 text-[10px] text-slate-500 font-mono">
+                v1.0.4 • Wireframe Architecture
+              </div>
+            </div>`;
+
+        case 's02':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col justify-between p-6">
+              <div class="flex justify-between items-center pt-2">
+                <span class="text-xs font-mono text-blue-400">01 / 03</span>
+                <button onclick="showScreen('s05')" class="text-xs text-slate-400 hover:text-white">Skip</button>
+              </div>
+
+              <div class="my-auto space-y-6">
+                <div class="h-48 bg-slate-800 rounded-2xl border border-slate-700 flex flex-col items-center justify-center relative overflow-hidden">
+                  <div class="absolute inset-0 opacity-20 wireframe-grid"></div>
+                  <i data-lucide="globe" class="w-16 h-16 text-blue-400 mb-2"></i>
+                  <span class="text-xs text-slate-400 font-mono">[ Illustration: Global City Discovery ]</span>
+                </div>
+                <div>
+                  <h2 class="text-xl font-bold leading-tight">Explore Cities.<br>Navigate Smarter.<br>Find Where You Belong.</h2>
+                  <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                    NANCY combines realtime transit schedules, intelligent map discovery, and unique astrocartography synergy analysis in one platform.
+                  </p>
+                </div>
+              </div>
+
+              <button onclick="showScreen('s03')" class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-xs rounded-xl flex items-center justify-center gap-2">
+                <span>Continue</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+            </div>`;
+
+        case 's03':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col justify-between p-6">
+              <div class="flex justify-between items-center pt-2">
+                <span class="text-xs font-mono text-blue-400">02 / 03</span>
+                <button onclick="showScreen('s05')" class="text-xs text-slate-400 hover:text-white">Skip</button>
+              </div>
+
+              <div class="my-auto space-y-6">
+                <div class="h-48 bg-slate-800 rounded-2xl border border-slate-700 flex flex-col items-center justify-center relative overflow-hidden">
+                  <div class="absolute inset-0 opacity-20 wireframe-grid"></div>
+                  <div class="flex gap-4 text-blue-400">
+                    <i data-lucide="train" class="w-10 h-10"></i>
+                    <i data-lucide="bus" class="w-10 h-10"></i>
+                    <i data-lucide="map-pin" class="w-10 h-10"></i>
+                  </div>
+                  <span class="text-xs text-slate-400 font-mono mt-3">[ Visual: Schedules & Map Routes ]</span>
+                </div>
+                <div>
+                  <h2 class="text-xl font-bold leading-tight">Realtime Transit & Schedule Lookup</h2>
+                  <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                    Seamlessly search train timetables, regional bus schedules, and intercity transit connections across major destination hubs.
+                  </p>
+                </div>
+              </div>
+
+              <button onclick="showScreen('s04')" class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-semibold text-xs rounded-xl flex items-center justify-center gap-2">
+                <span>Continue</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+            </div>`;
+
+        case 's04':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col justify-between p-6">
+              <div class="flex justify-between items-center pt-2">
+                <span class="text-xs font-mono text-amber-400">03 / 03</span>
+                <span class="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono">Premium Core</span>
+              </div>
+
+              <div class="my-auto space-y-6">
+                <div class="h-48 bg-slate-800 rounded-2xl border border-amber-500/30 flex flex-col items-center justify-center relative overflow-hidden">
+                  <div class="absolute inset-0 opacity-20 wireframe-grid"></div>
+                  <i data-lucide="sparkles" class="w-14 h-14 text-amber-400 mb-2"></i>
+                  <span class="text-xs text-amber-300/80 font-mono">[ Visual: Astrocartography Line Map ]</span>
+                </div>
+                <div>
+                  <h2 class="text-xl font-bold leading-tight">Astrocartography & Personalized Synergy</h2>
+                  <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                    Input your exact birth parameters to calculate high-synergy cities worldwide. Understand where your career, creativity, and peace flourish.
+                  </p>
+                </div>
+              </div>
+
+              <button onclick="showScreen('s05')" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20">
+                <span>Get Started Now</span>
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+              </button>
+            </div>`;
+
+        case 's05':
+          return `
+            <div class="h-full bg-white text-slate-900 flex flex-col justify-between p-6 overflow-y-auto">
+              <div class="pt-4 space-y-6">
+                <div class="flex items-center space-x-2">
+                  <div class="w-7 h-7 bg-blue-600 text-white font-bold rounded flex items-center justify-center">N</div>
+                  <span class="font-bold text-slate-800 tracking-wider text-sm">NANCY</span>
+                </div>
+
+                <div>
+                  <h2 class="text-xl font-bold text-slate-900">Sign In to Your Account</h2>
+                  <p class="text-xs text-slate-500 mt-1">Access saved transit routes and astro synergy reports.</p>
+                </div>
+
+                <!-- Protected Subscriber Alert Callout -->
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-2 text-[11px] text-amber-800">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                  <span>Active subscribers receive immediate access to saved calculations and premium map overlays after signing in.</span>
+                </div>
+
+                <form onsubmit="event.preventDefault(); showScreen('s08');" class="space-y-3">
+                  <div>
+                    <label class="text-[11px] font-semibold text-slate-700 block mb-1">Email Address</label>
+                    <input type="email" placeholder="alex.member@example.com" value="user@nancy-app.com" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-blue-600">
+                  </div>
+                  <div>
+                    <label class="text-[11px] font-semibold text-slate-700 block mb-1">Password</label>
+                    <div class="relative">
+                      <input type="password" value="••••••••••••" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-blue-600">
+                      <button type="button" class="absolute right-3 top-2.5 text-xs text-slate-400">Show</button>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between text-xs pt-1">
+                    <label class="flex items-center space-x-2 text-slate-600">
+                      <input type="checkbox" checked class="rounded border-slate-300 text-blue-600">
+                      <span>Remember me</span>
+                    </label>
+                    <button type="button" onclick="showScreen('s07')" class="text-blue-600 font-medium">Forgot password?</button>
+                  </div>
+
+                  <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition mt-2">
+                    Sign In
+                  </button>
+                </form>
+              </div>
+
+              <div class="pt-6 border-t border-slate-100 text-center space-y-3">
+                <p class="text-xs text-slate-500">Don't have an account?</p>
+                <button onclick="showScreen('s06')" class="w-full py-2 border border-slate-300 hover:bg-slate-50 font-semibold text-xs rounded-lg text-slate-700">
+                  Create New Account
+                </button>
+              </div>
+            </div>`;
+
+        case 's06':
+          return `
+            <div class="h-full bg-white text-slate-900 flex flex-col justify-between p-6 overflow-y-auto">
+              <div class="pt-2 space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-slate-800 text-sm">NANCY Registration</span>
+                  <button onclick="showScreen('s05')" class="text-xs text-blue-600">Login Instead</button>
+                </div>
+
+                <div>
+                  <h2 class="text-lg font-bold text-slate-900">Create Account</h2>
+                  <p class="text-xs text-slate-500">Setup your account to calculate personalized synergy scores.</p>
+                </div>
+
+                <form onsubmit="event.preventDefault(); showScreen('s08');" class="space-y-3">
+                  <div class="grid grid-cols-2 gap-2">
+                    <div>
+                      <label class="text-[10px] font-semibold text-slate-700 block mb-0.5">First Name</label>
+                      <input type="text" placeholder="Alex" class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg">
+                    </div>
+                    <div>
+                      <label class="text-[10px] font-semibold text-slate-700 block mb-0.5">Last Name</label>
+                      <input type="text" placeholder="Morgan" class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="text-[10px] font-semibold text-slate-700 block mb-0.5">Email Address</label>
+                    <input type="email" placeholder="alex@example.com" class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg">
+                  </div>
+
+                  <div>
+                    <label class="text-[10px] font-semibold text-slate-700 block mb-0.5">Password</label>
+                    <input type="password" placeholder="At least 8 characters" class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg">
+                  </div>
+
+                  <!-- Birth Data Setup Teaser -->
+                  <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+                    <span class="text-[10px] font-bold text-slate-700 block mb-1">Astro Synergy Profile Data (Optional now)</span>
+                    <p class="text-[10px] text-slate-500">You can provide exact birth time & place later to compute astrocartography maps.</p>
+                  </div>
+
+                  <label class="flex items-start space-x-2 text-[10px] text-slate-600 pt-1">
+                    <input type="checkbox" required class="mt-0.5 rounded border-slate-300">
+                    <span>I agree to Terms of Service, Privacy Policy and Astrocartography Data Consent.</span>
+                  </label>
+
+                  <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition">
+                    Create Free Account
+                  </button>
+                </form>
+              </div>
+            </div>`;
+
+        case 's07':
+          return `
+            <div class="h-full bg-white text-slate-900 flex flex-col justify-between p-6">
+              <div class="pt-4 space-y-6">
+                <button onclick="showScreen('s05')" class="text-xs text-blue-600 flex items-center gap-1 font-medium">
+                  <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Login
+                </button>
+
+                <div>
+                  <h2 class="text-xl font-bold text-slate-900">Reset Your Password</h2>
+                  <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Enter the email associated with your account and we will send instructions to reset your password.
+                  </p>
+                </div>
+
+                <div class="space-y-3">
+                  <div>
+                    <label class="text-[11px] font-semibold text-slate-700 block mb-1">Account Email</label>
+                    <input type="email" placeholder="your.email@example.com" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-blue-600">
+                  </div>
+                  <button onclick="alert('Password reset link sent to email placeholder.'); showScreen('s05');" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg">
+                    Send Recovery Link
+                  </button>
+                </div>
+              </div>
+
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center text-[11px] text-slate-500">
+                Need extra assistance? Contact <a href="#" onclick="showScreen('s32')" class="text-blue-600 font-medium">Customer Support</a>
+              </div>
+            </div>`;
+
+        case 's08':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 overflow-y-auto p-4 space-y-4">
+              <!-- Header Greeting -->
+              <div class="flex items-center justify-between pt-2">
+                <div>
+                  <h2 class="text-base font-bold text-slate-900">Good morning, Alex 👋</h2>
+                  <p class="text-xs text-slate-500">Where are we traveling today?</p>
+                </div>
+                <button onclick="showScreen('s30')" class="w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center relative">
+                  <i data-lucide="bell" class="w-4 h-4 text-slate-600"></i>
+                  <span class="w-2 h-2 bg-blue-600 rounded-full absolute top-1 right-1"></span>
+                </button>
+              </div>
+
+              <!-- Quick Actions Grid -->
+              <div class="grid grid-cols-4 gap-2 text-center text-[10px] font-medium">
+                <button onclick="showScreen('s09')" class="p-2.5 bg-white border border-slate-200 rounded-xl hover:border-blue-500 flex flex-col items-center">
+                  <i data-lucide="map" class="w-5 h-5 text-blue-600 mb-1"></i>
+                  <span>Explore Map</span>
+                </button>
+                <button onclick="showScreen('s11')" class="p-2.5 bg-white border border-slate-200 rounded-xl hover:border-blue-500 flex flex-col items-center">
+                  <i data-lucide="bus" class="w-5 h-5 text-emerald-600 mb-1"></i>
+                  <span>Find Transit</span>
+                </button>
+                <button onclick="showScreen('s16')" class="p-2.5 bg-white border border-slate-200 rounded-xl hover:border-blue-500 flex flex-col items-center">
+                  <i data-lucide="compass" class="w-5 h-5 text-amber-500 mb-1"></i>
+                  <span>Analyze City</span>
+                </button>
+                <button onclick="showScreen('s20')" class="p-2.5 bg-white border border-slate-200 rounded-xl hover:border-blue-500 flex flex-col items-center">
+                  <i data-lucide="columns" class="w-5 h-5 text-indigo-600 mb-1"></i>
+                  <span>Compare</span>
+                </button>
+              </div>
+
+              <!-- Transit Snapshot Banner -->
+              <div class="p-3 bg-blue-900 text-white rounded-xl shadow-sm space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold flex items-center gap-1.5">
+                    <i data-lucide="train" class="w-4 h-4 text-blue-300"></i> Nearby Transit Snapshot
+                  </span>
+                  <button onclick="showScreen('s12')" class="text-[10px] text-blue-300 underline">View Schedule</button>
+                </div>
+                <div class="p-2 bg-blue-950/60 rounded-lg text-xs flex justify-between items-center font-mono">
+                  <div>
+                    <div class="font-bold text-white">Express Train #402</div>
+                    <div class="text-[10px] text-slate-300">Central Stn → Metro Airport</div>
+                  </div>
+                  <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] rounded border border-emerald-500/40">On Time • 14 min</span>
+                </div>
+              </div>
+
+              <!-- Featured Synergy Location Recommendation -->
+              <div>
+                <div class="flex justify-between items-center mb-2">
+                  <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Top Synergy Match</h3>
+                  <button onclick="showScreen('s18')" class="text-xs text-blue-600">View Astro Map</button>
+                </div>
+                <div onclick="showScreen('s10')" class="bg-white border border-slate-200 rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition">
+                  <div class="h-28 bg-slate-300 relative flex items-center justify-center">
+                    <span class="text-xs text-slate-500 font-mono">[ Image: Lisbon, Portugal ]</span>
+                    <div class="absolute top-2 right-2 px-2 py-1 bg-amber-500 text-slate-950 font-bold text-[10px] rounded-lg shadow">
+                      94% Synergy Score
+                    </div>
+                  </div>
+                  <div class="p-3">
+                    <div class="flex justify-between items-start">
+                      <div>
+                        <h4 class="font-bold text-sm text-slate-900">Lisbon, Portugal</h4>
+                        <p class="text-[11px] text-slate-500">Venus / Sun Astro Line Alignments</p>
+                      </div>
+                      <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-medium">Train + Metro</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Premium Teaser Membership Banner -->
+              ${!isUserPaidSubscriber ? `
+              <div onclick="showScreen('s21')" class="p-3 bg-gradient-to-r from-amber-500/10 to-amber-600/20 border border-amber-500/30 rounded-xl flex items-center justify-between cursor-pointer">
+                <div class="space-y-0.5">
+                  <div class="text-xs font-bold text-amber-900 flex items-center gap-1">
+                    <i data-lucide="crown" class="w-3.5 h-3.5 text-amber-600"></i> Unlock Full Astro Cartography
+                  </div>
+                  <div class="text-[10px] text-slate-600">See all planetary lines & unlimited synergy scores.</div>
+                </div>
+                <button class="px-2.5 py-1 bg-amber-500 text-slate-950 font-bold text-[10px] rounded-lg">Upgrade</button>
+              </div>` : ''}
+            </div>`;
+
+        case 's09':
+          return `
+            <div class="h-full bg-slate-100 flex flex-col relative overflow-hidden">
+              <!-- Map Top Overlay Search -->
+              <div class="absolute top-3 inset-x-3 z-20 space-y-2">
+                <div class="flex items-center bg-white shadow-lg rounded-xl border border-slate-200 px-3 py-2 space-x-2">
+                  <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                  <input type="text" placeholder="Search city, station, or transit line..." class="w-full text-xs bg-transparent focus:outline-none">
+                  <button onclick="showScreen('state-permission')" class="text-slate-400"><i data-lucide="locate" class="w-4 h-4"></i></button>
+                </div>
+
+                <!-- Category Filters Pill Bar -->
+                <div class="flex space-x-1.5 overflow-x-auto pb-1 text-[10px] font-medium no-scrollbar">
+                  <span class="px-2.5 py-1 bg-slate-900 text-white rounded-full shadow shrink-0">All Markers</span>
+                  <span class="px-2.5 py-1 bg-white text-slate-700 rounded-full border border-slate-200 shadow shrink-0">🚂 Train Stations</span>
+                  <span class="px-2.5 py-1 bg-white text-slate-700 rounded-full border border-slate-200 shadow shrink-0">🚌 Bus Hubs</span>
+                  <span class="px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-full shadow shrink-0">⭐ High Synergy</span>
+                </div>
+              </div>
+
+              <!-- Interactive Map Canvas Visual Placeholder -->
+              <div class="flex-1 bg-slate-300 relative flex items-center justify-center wireframe-grid">
+                <span class="text-xs text-slate-500 font-mono absolute top-20">Interactive Vector Map Canvas View</span>
+
+                <!-- Map Pin 1: Lisbon -->
+                <button onclick="showScreen('s10')" class="absolute top-1/3 left-1/2 transform -translate-x-1/2 flex flex-col items-center group">
+                  <span class="px-2 py-0.5 bg-amber-500 text-slate-950 text-[9px] font-bold rounded shadow marker-pulse">Lisbon • 94% Synergy</span>
+                  <i data-lucide="map-pin" class="w-6 h-6 text-amber-600 mt-0.5"></i>
+                </button>
+
+                <!-- Map Pin 2: Transit Hub -->
+                <button onclick="showScreen('s10')" class="absolute bottom-1/3 left-1/4 flex flex-col items-center">
+                  <span class="px-2 py-0.5 bg-blue-600 text-white text-[9px] font-bold rounded shadow">Central Rail Station</span>
+                  <i data-lucide="train" class="w-5 h-5 text-blue-600 mt-0.5"></i>
+                </button>
+
+                <!-- Map Zoom Controls -->
+                <div class="absolute right-3 bottom-24 bg-white border border-slate-200 rounded-lg shadow flex flex-col divide-y text-slate-700">
+                  <button class="p-2 text-xs font-bold">+</button>
+                  <button class="p-2 text-xs font-bold">-</button>
+                </div>
+              </div>
+
+              <!-- Map Bottom Preview Card -->
+              <div onclick="showScreen('s10')" class="bg-white border-t border-slate-200 p-3 z-20 flex items-center justify-between shadow-lg cursor-pointer">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                    <i data-lucide="map-pin" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <div class="text-xs font-bold text-slate-900">Selected: Lisbon, Portugal</div>
+                    <div class="text-[10px] text-slate-500">Train connection available • 94% Astro Synergy</div>
+                  </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+              </div>
+            </div>`;
+
+        case 's10':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col overflow-y-auto">
+              <!-- Top Image Banner -->
+              <div class="h-40 bg-slate-300 relative flex items-center justify-center shrink-0">
+                <span class="text-xs text-slate-500 font-mono">[ Image Banner: Lisbon Header ]</span>
+                <button onclick="showScreen('s09')" class="absolute top-3 left-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-slate-800">
+                  <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                </button>
+                <div class="absolute bottom-3 right-3 px-2.5 py-1 bg-amber-500 text-slate-950 font-bold text-xs rounded-lg shadow">
+                  94% Synergy Score
+                </div>
+              </div>
+
+              <!-- Details Body -->
+              <div class="p-4 space-y-4 flex-1">
+                <div>
+                  <div class="flex justify-between items-start">
+                    <h2 class="text-lg font-bold text-slate-900">Lisbon, Portugal</h2>
+                    <button class="text-xs text-slate-500 flex items-center gap-1 border border-slate-200 bg-white px-2 py-1 rounded-lg">
+                      <i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Save
+                    </button>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-1">Southern Europe • Atlantic Coastline</p>
+                </div>
+
+                <!-- Transit Availability Info -->
+                <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-2">
+                  <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <i data-lucide="bus" class="w-4 h-4 text-blue-600"></i> Local & Intercity Transit
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
+                    <div class="p-2 bg-slate-50 rounded">🚂 Main Station: Santa Apolónia</div>
+                    <div class="p-2 bg-slate-50 rounded">🚌 Bus Terminal: Sete Rios</div>
+                  </div>
+                  <button onclick="showScreen('s11')" class="w-full py-1.5 bg-blue-50 text-blue-600 font-semibold text-xs rounded border border-blue-200">
+                    Search Routes To Lisbon
+                  </button>
+                </div>
+
+                <!-- Astrocartography Teaser -->
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+                  <div class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-600"></i> Astrocartography Relevance
+                  </div>
+                  <p class="text-[11px] text-amber-800">
+                    Located directly along your <strong>Venus Midheaven Line</strong>. High harmony for career growth and creative fulfillment.
+                  </p>
+                  <button onclick="showScreen('s19')" class="w-full py-1.5 bg-amber-500 text-slate-950 font-bold text-xs rounded shadow">
+                    View Full Synergy Breakdown
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                  <button onclick="showScreen('s20')" class="py-2 border border-slate-300 bg-white text-slate-700 text-xs font-semibold rounded-lg">
+                    Compare City
+                  </button>
+                  <button onclick="showScreen('s18')" class="py-2 border border-slate-300 bg-white text-slate-700 text-xs font-semibold rounded-lg">
+                    View Astro Map
+                  </button>
+                </div>
+              </div>
+            </div>`;
+
+        case 's11':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col p-4 space-y-4 overflow-y-auto">
+              <div>
+                <h2 class="text-base font-bold text-slate-900">Transit & Schedule Search</h2>
+                <p class="text-xs text-slate-500">Find trains and regional buses across cities.</p>
+              </div>
+
+              <!-- Transit Tabs (Train / Bus) -->
+              <div class="flex bg-slate-200 p-1 rounded-xl text-xs font-semibold">
+                <button class="flex-1 py-1.5 bg-white text-blue-600 rounded-lg shadow-sm flex items-center justify-center gap-1">
+                  <i data-lucide="train" class="w-4 h-4"></i> Train Schedules
+                </button>
+                <button class="flex-1 py-1.5 text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1">
+                  <i data-lucide="bus" class="w-4 h-4"></i> Bus Schedules
+                </button>
+              </div>
+
+              <!-- Route Form -->
+              <div class="bg-white p-4 border border-slate-200 rounded-xl space-y-3 shadow-sm">
+                <div>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase">From</label>
+                  <input type="text" value="Madrid Atocha Central" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-medium">
+                </div>
+                <div>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase">To</label>
+                  <input type="text" value="Lisbon Santa Apolónia" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-medium">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Date</label>
+                    <input type="date" value="2026-10-15" class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg">
+                  </div>
+                  <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Time</label>
+                    <input type="time" value="08:30" class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg">
+                  </div>
+                </div>
+
+                <button onclick="showScreen('s12')" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg flex items-center justify-center gap-2">
+                  <i data-lucide="search" class="w-4 h-4"></i>
+                  <span>Search Train Schedules</span>
+                </button>
+              </div>
+
+              <!-- Recent Searches -->
+              <div>
+                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Recent Transit Searches</h3>
+                <div class="space-y-1.5 text-xs">
+                  <button onclick="showScreen('s12')" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg flex justify-between items-center text-left hover:bg-slate-50">
+                    <div>
+                      <div class="font-medium text-slate-800">Madrid → Lisbon</div>
+                      <div class="text-[10px] text-slate-400">Train • Oct 15</div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                  </button>
+                </div>
+              </div>
+            </div>`;
+
+        case 's12':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col overflow-y-auto">
+              <!-- Top Search Header -->
+              <div class="bg-slate-900 text-white p-4 space-y-2 shrink-0">
+                <div class="flex items-center space-x-2">
+                  <button onclick="showScreen('s11')" class="text-slate-300"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
+                  <div class="text-xs">
+                    <span class="font-bold text-white">Madrid → Lisbon</span>
+                    <span class="text-slate-400 text-[10px] block">Train Schedules • Oct 15</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Filter Pills -->
+              <div class="p-2 bg-white border-b border-slate-200 flex space-x-2 text-[10px] overflow-x-auto shrink-0">
+                <button class="px-2.5 py-1 bg-slate-900 text-white rounded-full">Departure (Earliest)</button>
+                <button class="px-2.5 py-1 bg-slate-100 border text-slate-700 rounded-full">Direct Only</button>
+                <button class="px-2.5 py-1 bg-slate-100 border text-slate-700 rounded-full">High Speed</button>
+              </div>
+
+              <!-- Schedule Cards -->
+              <div class="p-4 space-y-3 flex-1">
+                <!-- Card 1 -->
+                <div onclick="showScreen('s14')" class="bg-white border border-slate-200 rounded-xl p-3 space-y-2 shadow-sm hover:border-blue-500 cursor-pointer">
+                  <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <span class="text-[10px] font-mono text-blue-600 font-bold">Lusitania Express #802</span>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">On Time</span>
+                  </div>
+                  <div class="flex justify-between items-center text-xs">
+                    <div>
+                      <div class="font-bold text-sm text-slate-900">08:45</div>
+                      <div class="text-[10px] text-slate-500">Madrid Atocha</div>
+                    </div>
+                    <div class="text-center text-[10px] text-slate-400">
+                      <div>9h 15m</div>
+                      <div class="w-16 h-0.5 bg-slate-300 my-1 mx-auto relative">
+                        <div class="w-1.5 h-1.5 bg-blue-600 rounded-full absolute -top-0.5 left-1/2 transform -translate-x-1/2"></div>
+                      </div>
+                      <div>1 Stop</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="font-bold text-sm text-slate-900">17:00</div>
+                      <div class="text-[10px] text-slate-500">Lisbon Apolónia</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div onclick="showScreen('s14')" class="bg-white border border-slate-200 rounded-xl p-3 space-y-2 shadow-sm hover:border-blue-500 cursor-pointer">
+                  <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <span class="text-[10px] font-mono text-blue-600 font-bold">Iberia High Speed #410</span>
+                    <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Daily Service</span>
+                  </div>
+                  <div class="flex justify-between items-center text-xs">
+                    <div>
+                      <div class="font-bold text-sm text-slate-900">13:20</div>
+                      <div class="text-[10px] text-slate-500">Madrid Atocha</div>
+                    </div>
+                    <div class="text-center text-[10px] text-slate-400">
+                      <div>8h 50m</div>
+                      <div class="w-16 h-0.5 bg-slate-300 my-1 mx-auto"></div>
+                      <div>Direct</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="font-bold text-sm text-slate-900">22:10</div>
+                      <div class="text-[10px] text-slate-500">Lisbon Apolónia</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+
+        case 's13':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col overflow-y-auto">
+              <div class="bg-slate-900 text-white p-4 space-y-2 shrink-0">
+                <div class="flex items-center space-x-2">
+                  <button onclick="showScreen('s11')" class="text-slate-300"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
+                  <div class="text-xs">
+                    <span class="font-bold text-white">Madrid → Lisbon</span>
+                    <span class="text-slate-400 text-[10px] block">Regional Bus Schedules • Oct 15</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-4 space-y-3 flex-1">
+                <div onclick="showScreen('s14')" class="bg-white border border-slate-200 rounded-xl p-3 space-y-2 shadow-sm cursor-pointer">
+                  <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <span class="text-[10px] font-bold text-slate-700">FlixBus Lines #EU902</span>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">Boarding Guarantee</span>
+                  </div>
+                  <div class="flex justify-between items-center text-xs">
+                    <div>
+                      <div class="font-bold text-sm text-slate-900">09:15</div>
+                      <div class="text-[10px] text-slate-500">Madrid South Hub</div>
+                    </div>
+                    <div class="text-center text-[10px] text-slate-400">
+                      <div>7h 45m</div>
+                      <div class="w-16 h-0.5 bg-slate-300 my-1 mx-auto"></div>
+                      <div>Direct</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="font-bold text-sm text-slate-900">17:00</div>
+                      <div class="text-[10px] text-slate-500">Lisbon Sete Rios</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+
+        case 's14':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col overflow-y-auto">
+              <div class="h-36 bg-slate-300 relative flex items-center justify-center shrink-0 wireframe-grid">
+                <span class="text-xs text-slate-500 font-mono">[ Map Polyline: Madrid to Lisbon ]</span>
+                <button onclick="showScreen('s12')" class="absolute top-3 left-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-slate-800 shadow">
+                  <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <div class="p-4 space-y-4 flex-1">
+                <div>
+                  <h2 class="text-base font-bold text-slate-900">Lusitania Express #802</h2>
+                  <p class="text-xs text-slate-500">Madrid Atocha → Lisbon Apolónia</p>
+                </div>
+
+                <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-3">
+                  <div class="text-xs font-bold text-slate-800">Route Timeline & Stops</div>
+                  
+                  <div class="space-y-4 text-xs relative pl-4 border-l-2 border-blue-500">
+                    <div>
+                      <div class="font-bold text-slate-900">08:45 • Madrid Atocha Central</div>
+                      <div class="text-[10px] text-slate-400">Origin • Platform 4</div>
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-900">12:30 • Salamanca Station</div>
+                      <div class="text-[10px] text-slate-400">Stopover (10 min duration)</div>
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-900">17:00 • Lisbon Santa Apolónia</div>
+                      <div class="text-[10px] text-slate-400">Destination Hub</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex gap-2">
+                  <button onclick="alert('Route saved to profile!'); showScreen('s29');" class="flex-1 py-2 bg-blue-600 text-white font-semibold text-xs rounded-lg">
+                    Save Route
+                  </button>
+                  <button class="px-3 py-2 border border-slate-300 bg-white rounded-lg text-slate-700 text-xs">
+                    Share
+                  </button>
+                </div>
+              </div>
+            </div>`;
+
+        case 's15':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col justify-between p-6 overflow-y-auto">
+              <div class="pt-2 space-y-4">
+                <div class="flex items-center space-x-2 text-amber-400">
+                  <i data-lucide="compass" class="w-6 h-6"></i>
+                  <span class="text-xs font-mono tracking-widest uppercase">Astrocartography Hub</span>
+                </div>
+
+                <div>
+                  <h2 class="text-xl font-bold leading-tight">Find Cities That Align With Your Natural Energy</h2>
+                  <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                    Astrocartography projects your unique planetary birth positions onto world geographical lines.
+                  </p>
+                </div>
+
+                <div class="p-3 bg-slate-800 border border-amber-500/30 rounded-xl space-y-2">
+                  <div class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> How Calculations Work
+                  </div>
+                  <ul class="text-[11px] text-slate-300 space-y-1 list-disc list-inside">
+                    <li>Input exact birth date, time, and location.</li>
+                    <li>Generate planetary lines (Sun, Moon, Venus, Jupiter).</li>
+                    <li>Compute city synergy scores from 0% to 100%.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <button onclick="showScreen('s16')" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20">
+                Start My City Analysis →
+              </button>
+            </div>`;
+
+        case 's16':
+          return `
+            <div class="h-full bg-white text-slate-900 flex flex-col justify-between p-6 overflow-y-auto">
+              <div class="pt-2 space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-mono text-amber-600 font-bold">STEP 1 OF 2</span>
+                  <button onclick="showScreen('s15')" class="text-xs text-slate-400">Cancel</button>
+                </div>
+
+                <div>
+                  <h2 class="text-lg font-bold text-slate-900">Personal Birth Parameters</h2>
+                  <p class="text-xs text-slate-500">Required to compute accurate planetary lines.</p>
+                </div>
+
+                <form onsubmit="event.preventDefault(); showScreen('s17');" class="space-y-3">
+                  <div>
+                    <label class="text-[11px] font-semibold text-slate-700 block mb-1">Full Legal Name</label>
+                    <input type="text" value="Alex Morgan" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg">
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-2">
+                    <div>
+                      <label class="text-[11px] font-semibold text-slate-700 block mb-1">Date of Birth</label>
+                      <input type="date" value="1995-06-12" class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg">
+                    </div>
+                    <div>
+                      <label class="text-[11px] font-semibold text-slate-700 block mb-1">Exact Birth Time</label>
+                      <input type="time" value="14:22" class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="text-[11px] font-semibold text-slate-700 block mb-1">Birth Location (City, Country)</label>
+                    <input type="text" value="Chicago, Illinois, USA" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg">
+                  </div>
+
+                  <div>
+                    <label class="text-[11px] font-semibold text-slate-700 block mb-1">Current Living Location</label>
+                    <input type="text" value="New York City, NY" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg">
+                  </div>
+
+                  <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition mt-2">
+                    Next: Select Cities →
+                  </button>
+                </form>
+              </div>
+            </div>`;
+
+        case 's17':
+          return `
+            <div class="h-full bg-white text-slate-900 flex flex-col justify-between p-6 overflow-y-auto">
+              <div class="pt-2 space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-mono text-amber-600 font-bold">STEP 2 OF 2</span>
+                  <button onclick="showScreen('s16')" class="text-xs text-slate-400">Back</button>
+                </div>
+
+                <div>
+                  <h2 class="text-lg font-bold text-slate-900">Select Target Cities</h2>
+                  <p class="text-xs text-slate-500">Choose up to 4 cities to analyze synergy scores.</p>
+                </div>
+
+                <div class="space-y-2">
+                  <div class="flex space-x-2">
+                    <input type="text" placeholder="Search city (e.g. Lisbon, Tokyo)..." value="Lisbon" class="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg">
+                    <button class="px-3 py-2 bg-slate-900 text-white text-xs rounded-lg font-medium">+ Add</button>
+                  </div>
+
+                  <!-- Selected Cities Pills List -->
+                  <div class="space-y-1.5 pt-2">
+                    <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-xs">
+                      <span class="font-bold text-slate-800">Lisbon, Portugal</span>
+                      <span class="text-[10px] text-amber-600 font-semibold">Ready</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-xs">
+                      <span class="font-bold text-slate-800">Tokyo, Japan</span>
+                      <span class="text-[10px] text-amber-600 font-semibold">Ready</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="showScreen('state-loading')" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-lg">
+                Compute Astro Synergy Engine
+              </button>
+            </div>`;
+
+        case 's18':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col relative overflow-hidden">
+              ${lockOverlay}
+              
+              <div class="p-3 bg-slate-800 border-b border-slate-700 flex justify-between items-center z-10">
+                <div>
+                  <h3 class="text-xs font-bold text-amber-400">Astrocartography Lines Map</h3>
+                  <p class="text-[10px] text-slate-400">Planetary Intersections Overlay</p>
+                </div>
+                <button onclick="showScreen('s19')" class="px-2.5 py-1 bg-amber-500 text-slate-950 font-bold text-[10px] rounded">
+                  Score Breakdown →
+                </button>
+              </div>
+
+              <div class="flex-1 bg-slate-950 relative flex items-center justify-center wireframe-grid">
+                <!-- Planetary Lines SVG overlay -->
+                <svg class="absolute inset-0 w-full h-full stroke-amber-500/40" stroke-width="2">
+                  <path d="M 50 0 Q 200 400 350 800" stroke="#f59e0b" fill="none" />
+                  <path d="M 0 300 Q 180 200 390 500" stroke="#3b82f6" fill="none" />
+                </svg>
+
+                <div class="absolute top-1/3 left-1/2 transform -translate-x-1/2 bg-slate-900 border border-amber-500 px-3 py-1.5 rounded-lg text-center shadow-lg">
+                  <div class="text-[10px] text-amber-400 font-mono font-bold">VENUS MIDHEAVEN LINE</div>
+                  <div class="text-xs font-bold text-white">Lisbon, Portugal</div>
+                </div>
+              </div>
+            </div>`;
+
+        case 's19':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col p-4 space-y-4 overflow-y-auto relative">
+              ${lockOverlay}
+
+              <div class="flex justify-between items-center pt-2">
+                <button onclick="showScreen('s18')" class="text-xs text-slate-400">← Map View</button>
+                <span class="text-xs font-mono text-amber-400">SYNERGY SCORE</span>
+              </div>
+
+              <!-- Main Score Display Ring/Card -->
+              <div class="bg-slate-800 border border-amber-500/40 p-5 rounded-2xl text-center space-y-2">
+                <h3 class="text-base font-bold text-white">Lisbon, Portugal</h3>
+                <div class="text-4xl font-extrabold text-amber-400 tracking-tight my-1">94%</div>
+                <p class="text-xs text-slate-300">Exceptional Compatibility Match</p>
+              </div>
+
+              <!-- Category Score Breakdown -->
+              <div class="space-y-2 text-xs">
+                <div class="p-2.5 bg-slate-800/80 rounded-xl space-y-1">
+                  <div class="flex justify-between text-[11px]">
+                    <span class="text-slate-300">Career & Ambition (Sun MC)</span>
+                    <span class="font-bold text-amber-400">96%</span>
+                  </div>
+                  <div class="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div class="w-[96%] h-full bg-amber-500"></div>
+                  </div>
+                </div>
+
+                <div class="p-2.5 bg-slate-800/80 rounded-xl space-y-1">
+                  <div class="flex justify-between text-[11px]">
+                    <span class="text-slate-300">Peace & Emotional Harmony (Moon IC)</span>
+                    <span class="font-bold text-emerald-400">90%</span>
+                  </div>
+                  <div class="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div class="w-[90%] h-full bg-emerald-500"></div>
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="showScreen('s20')" class="w-full py-2.5 border border-slate-700 bg-slate-800 text-slate-200 font-semibold text-xs rounded-xl">
+                Compare Lisbon vs Other Cities →
+              </button>
+            </div>`;
+
+        case 's20':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col p-4 space-y-4 overflow-y-auto relative">
+              ${lockOverlay}
+
+              <div>
+                <h2 class="text-base font-bold text-white">City Comparison Matrix</h2>
+                <p class="text-xs text-slate-400">Side-by-side synergy & transit analysis.</p>
+              </div>
+
+              <!-- Comparison Table Grid -->
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <!-- City Column 1 -->
+                <div class="bg-slate-800 border border-amber-500/40 p-3 rounded-xl space-y-3">
+                  <div class="text-center pb-2 border-b border-slate-700">
+                    <div class="font-bold text-sm text-white">Lisbon</div>
+                    <div class="text-xl font-bold text-amber-400 mt-1">94%</div>
+                  </div>
+                  <div class="space-y-2 text-[10px] text-slate-300">
+                    <div><strong>Key Line:</strong> Venus MC</div>
+                    <div><strong>Transit:</strong> High (Metro/Train)</div>
+                    <div><strong>Best For:</strong> Career & Peace</div>
+                  </div>
+                </div>
+
+                <!-- City Column 2 -->
+                <div class="bg-slate-800 border border-slate-700 p-3 rounded-xl space-y-3">
+                  <div class="text-center pb-2 border-b border-slate-700">
+                    <div class="font-bold text-sm text-white">Tokyo</div>
+                    <div class="text-xl font-bold text-blue-400 mt-1">78%</div>
+                  </div>
+                  <div class="space-y-2 text-[10px] text-slate-300">
+                    <div><strong>Key Line:</strong> Mercury ASC</div>
+                    <div><strong>Transit:</strong> Ultra High (Shinkansen)</div>
+                    <div><strong>Best For:</strong> Intellect & Speed</div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+
+        case 's21':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col justify-between p-6 overflow-y-auto">
+              <div class="pt-2 space-y-5">
+                <div class="flex justify-between items-center">
+                  <div class="w-8 h-8 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center">
+                    <i data-lucide="crown" class="w-4 h-4"></i>
+                  </div>
+                  <button onclick="showScreen('s08')" class="text-xs text-slate-400">Dismiss</button>
+                </div>
+
+                <div>
+                  <h2 class="text-xl font-bold leading-tight text-white">Unlock NANCY Premium</h2>
+                  <p class="text-xs text-slate-400 mt-1">Gain unrestricted access to planetary lines, synergy scores, and saved routes.</p>
+                </div>
+
+                <div class="space-y-2.5 text-xs">
+                  <div class="p-2.5 bg-slate-800 rounded-xl flex items-center space-x-3">
+                    <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                    <span>Full Astrocartography Map Overlays</span>
+                  </div>
+                  <div class="p-2.5 bg-slate-800 rounded-xl flex items-center space-x-3">
+                    <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                    <span>Unlimited City Synergy Calculations</span>
+                  </div>
+                  <div class="p-2.5 bg-slate-800 rounded-xl flex items-center space-x-3">
+                    <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                    <span>Realtime Train & Bus Delay Notifications</span>
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="showScreen('s22')" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20">
+                View Subscription Plans →
+              </button>
+            </div>`;
+
+        case 's22':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col justify-between p-6 overflow-y-auto">
+              <div class="pt-2 space-y-4">
+                <button onclick="showScreen('s21')" class="text-xs text-slate-400">← Back</button>
+
+                <div>
+                  <h2 class="text-lg font-bold text-white">Choose Your Membership</h2>
+                  <p class="text-xs text-slate-400">Cancel or switch tiers anytime in settings.</p>
+                </div>
+
+                <div class="space-y-3">
+                  <!-- Annual Plan Card -->
+                  <div onclick="showScreen('s23')" class="p-4 bg-slate-800 border-2 border-amber-500 rounded-2xl relative cursor-pointer">
+                    <span class="absolute -top-2.5 right-4 bg-amber-500 text-slate-950 font-bold text-[9px] px-2 py-0.5 rounded-full">
+                      BEST VALUE • SAVE 35%
+                    </span>
+                    <div class="flex justify-between items-baseline">
+                      <div class="font-bold text-sm text-white">Annual Membership</div>
+                      <div class="text-base font-extrabold text-amber-400">$79.99<span class="text-xs text-slate-400 font-normal">/yr</span></div>
+                    </div>
+                    <div class="text-[10px] text-slate-400 mt-1">Equivalent to $6.66/month billed annually.</div>
+                  </div>
+
+                  <!-- Monthly Plan Card -->
+                  <div onclick="showScreen('s23')" class="p-4 bg-slate-800 border border-slate-700 rounded-2xl cursor-pointer">
+                    <div class="flex justify-between items-baseline">
+                      <div class="font-bold text-sm text-white">Monthly Flex Plan</div>
+                      <div class="text-base font-extrabold text-white">$9.99<span class="text-xs text-slate-400 font-normal">/mo</span></div>
+                    </div>
+                    <div class="text-[10px] text-slate-400 mt-1">Billed monthly. Cancel anytime.</div>
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="showScreen('s23')" class="w-full py-3 bg-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg">
+                Continue to Payment
+              </button>
+            </div>`;
+
+        case 's23':
+          return `
+            <div class="h-full bg-white text-slate-900 flex flex-col justify-between p-6 overflow-y-auto">
+              <div class="pt-2 space-y-4">
+                <button onclick="showScreen('s22')" class="text-xs text-slate-500">← Change Plan</button>
+
+                <div>
+                  <h2 class="text-lg font-bold text-slate-900">In-App Checkout</h2>
+                  <p class="text-xs text-slate-500">Secure transaction processed via Apple / Mobile Pay.</p>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                  <div class="flex justify-between font-bold text-slate-800">
+                    <span>NANCY Premium (Annual)</span>
+                    <span>$79.99</span>
+                  </div>
+                  <div class="text-[10px] text-slate-500">Renews automatically every 12 months.</div>
+                </div>
+
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase">Payment Method</label>
+                  <div class="p-3 border border-blue-600 bg-blue-50/50 rounded-xl flex items-center justify-between text-xs">
+                    <span class="font-semibold text-slate-800 flex items-center gap-2">
+                      <i data-lucide="credit-card" class="w-4 h-4 text-blue-600"></i> Apple Pay / Mobile Wallet
+                    </span>
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-blue-600"></i>
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="showScreen('s24')" class="w-full py-3 bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-xl shadow-lg">
+                Confirm & Pay $79.99
+              </button>
+            </div>`;
+
+        case 's24':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center space-y-4">
+              <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center border border-emerald-500/40">
+                <i data-lucide="check-circle" class="w-8 h-8"></i>
+              </div>
+
+              <div>
+                <h2 class="text-xl font-bold text-white">Purchase Successful!</h2>
+                <p class="text-xs text-slate-400 mt-1">Your account is now upgraded to NANCY Premium.</p>
+              </div>
+
+              <div class="p-3 bg-slate-800 rounded-xl text-xs text-slate-300 w-full font-mono">
+                Status: Active Paid Subscriber
+              </div>
+
+              <button onclick="togglePaywallState(); showScreen('s25');" class="w-full py-3 bg-amber-500 text-slate-950 font-bold text-xs rounded-xl">
+                Start Exploring Subscriber Dashboard →
+              </button>
+            </div>`;
+
+        case 's25':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col p-4 space-y-4 overflow-y-auto">
+              <div class="flex justify-between items-center pt-2">
+                <div>
+                  <span class="px-2 py-0.5 bg-amber-500 text-slate-950 font-bold text-[9px] rounded-full uppercase">Subscriber Portal</span>
+                  <h2 class="text-base font-bold text-white mt-1">Welcome back, Alex</h2>
+                </div>
+                <button onclick="showScreen('s27')" class="text-xs text-amber-400 underline">Manage Plan</button>
+              </div>
+
+              <div class="p-4 bg-gradient-to-br from-amber-500/20 to-slate-800 border border-amber-500/30 rounded-2xl space-y-2">
+                <div class="text-xs font-bold text-amber-300">Active Membership Tools</div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <button onclick="showScreen('s18')" class="p-2.5 bg-slate-900/80 rounded-xl text-left border border-amber-500/20 hover:border-amber-400">
+                    <div class="font-bold text-white">Full Astro Map</div>
+                    <div class="text-[10px] text-slate-400">All Lines Unlocked</div>
+                  </button>
+                  <button onclick="showScreen('s20')" class="p-2.5 bg-slate-900/80 rounded-xl text-left border border-amber-500/20 hover:border-amber-400">
+                    <div class="font-bold text-white">City Radar</div>
+                    <div class="text-[10px] text-slate-400">Compare Matrix</div>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Saved Synergy Analyses</h3>
+                <div class="p-3 bg-slate-800 rounded-xl text-xs flex justify-between items-center">
+                  <div>
+                    <div class="font-bold text-white">Lisbon Astro Report</div>
+                    <div class="text-[10px] text-amber-400">94% Synergy Score</div>
+                  </div>
+                  <button onclick="showScreen('s19')" class="text-[10px] bg-slate-700 px-2 py-1 rounded">Open Report</button>
+                </div>
+              </div>
+            </div>`;
+
+        case 's26':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col p-4 space-y-4 overflow-y-auto">
+              <!-- Profile Card Header -->
+              <div class="bg-white p-4 border border-slate-200 rounded-2xl flex items-center space-x-3 shadow-sm">
+                <div class="w-12 h-12 bg-slate-800 text-white rounded-full flex items-center justify-center font-bold text-base">
+                  AM
+                </div>
+                <div>
+                  <h2 class="text-sm font-bold text-slate-900">Alex Morgan</h2>
+                  <p class="text-xs text-slate-500">alex@nancy-app.com</p>
+                  <span class="inline-block mt-1 px-2 py-0.5 ${isUserPaidSubscriber ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'} text-[9px] font-bold rounded">
+                    ${isUserPaidSubscriber ? 'PRO SUBSCRIBER' : 'FREE ACCOUNT'}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Menu List -->
+              <div class="bg-white border border-slate-200 rounded-2xl divide-y text-xs font-medium text-slate-700">
+                <button onclick="showScreen('s27')" class="w-full p-3 flex justify-between items-center hover:bg-slate-50">
+                  <span class="flex items-center gap-2"><i data-lucide="credit-card" class="w-4 h-4 text-blue-600"></i> Manage Subscription</span>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                </button>
+                <button onclick="showScreen('s28')" class="w-full p-3 flex justify-between items-center hover:bg-slate-50">
+                  <span class="flex items-center gap-2"><i data-lucide="bookmark" class="w-4 h-4 text-blue-600"></i> Saved Locations & Synergy</span>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                </button>
+                <button onclick="showScreen('s29')" class="w-full p-3 flex justify-between items-center hover:bg-slate-50">
+                  <span class="flex items-center gap-2"><i data-lucide="navigation" class="w-4 h-4 text-blue-600"></i> Saved Transit Routes</span>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                </button>
+                <button onclick="showScreen('s31')" class="w-full p-3 flex justify-between items-center hover:bg-slate-50">
+                  <span class="flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4 text-slate-600"></i> Settings & Privacy</span>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                </button>
+              </div>
+
+              <button onclick="showScreen('s05')" class="w-full py-2.5 text-rose-600 font-semibold text-xs bg-white border border-slate-200 rounded-xl">
+                Log Out
+              </button>
+            </div>`;
+
+        case 's27':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col p-4 space-y-4 overflow-y-auto">
+              <div class="flex items-center space-x-2">
+                <button onclick="showScreen('s26')" class="text-slate-600"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
+                <h2 class="text-sm font-bold text-slate-900">Manage Subscription</h2>
+              </div>
+
+              <div class="bg-white p-4 border border-slate-200 rounded-xl space-y-3 shadow-sm text-xs">
+                <div class="flex justify-between items-center border-b pb-2">
+                  <span class="text-slate-500">Current Plan</span>
+                  <span class="font-bold text-slate-900">${isUserPaidSubscriber ? 'Annual Premium Plan' : 'Free Tier'}</span>
+                </div>
+                <div class="flex justify-between items-center border-b pb-2">
+                  <span class="text-slate-500">Billing Cycle</span>
+                  <span class="font-medium text-slate-800">${isUserPaidSubscriber ? '$79.99 / year' : 'N/A'}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-500">Next Renewal</span>
+                  <span class="font-mono text-slate-800">${isUserPaidSubscriber ? 'Oct 15, 2027' : 'N/A'}</span>
+                </div>
+              </div>
+
+              ${isUserPaidSubscriber ? `
+              <button onclick="alert('Subscription cancellation dialog triggered.');" class="w-full py-2.5 text-rose-600 border border-rose-200 bg-rose-50 rounded-xl font-semibold text-xs">
+                Cancel Membership Renewal
+              </button>` : `
+              <button onclick="showScreen('s22')" class="w-full py-2.5 bg-amber-500 text-slate-950 font-bold text-xs rounded-xl">
+                Upgrade to Premium Plan
+              </button>`}
+            </div>`;
+
+        case 's28':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col p-4 space-y-3 overflow-y-auto">
+              <div class="flex justify-between items-center">
+                <h2 class="text-base font-bold text-slate-900">Saved Locations</h2>
+                <button onclick="showScreen('state-empty')" class="text-[10px] text-slate-400">Test Empty State</button>
+              </div>
+
+              <div class="space-y-2">
+                <div class="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between shadow-sm">
+                  <div>
+                    <div class="font-bold text-xs text-slate-900">Lisbon, Portugal</div>
+                    <div class="text-[10px] text-amber-600 font-semibold">94% Synergy Score</div>
+                  </div>
+                  <button onclick="showScreen('s10')" class="px-2.5 py-1 bg-slate-100 text-slate-700 font-medium text-[10px] rounded">View</button>
+                </div>
+              </div>
+            </div>`;
+
+        case 's29':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col p-4 space-y-3 overflow-y-auto">
+              <h2 class="text-base font-bold text-slate-900">Saved Routes</h2>
+
+              <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-2 shadow-sm text-xs">
+                <div class="flex justify-between font-bold text-slate-900">
+                  <span>Madrid Atocha → Lisbon Apolónia</span>
+                  <span class="text-blue-600 font-mono">Train #802</span>
+                </div>
+                <div class="text-[10px] text-slate-500">Duration: 9h 15m • Daily service</div>
+                <button onclick="showScreen('s14')" class="w-full py-1.5 bg-blue-50 text-blue-600 font-semibold text-[10px] rounded border border-blue-200">
+                  View Route Timeline
+                </button>
+              </div>
+            </div>`;
+
+        case 's30':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col p-4 space-y-3 overflow-y-auto">
+              <h2 class="text-base font-bold text-slate-900">Notifications</h2>
+
+              <div class="space-y-2 text-xs">
+                <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+                  <div class="flex justify-between font-bold text-slate-900">
+                    <span>Train Delay Alert</span>
+                    <span class="text-[9px] text-slate-400">10m ago</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500">Lusitania Express #802 is running 5 minutes behind schedule.</p>
+                </div>
+
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
+                  <div class="flex justify-between font-bold text-amber-900">
+                    <span>New Synergy Recommendation</span>
+                    <span class="text-[9px] text-amber-700">1d ago</span>
+                  </div>
+                  <p class="text-[11px] text-amber-800">Tokyo matches 88% with your Mercury Ascension planetary lines.</p>
+                </div>
+              </div>
+            </div>`;
+
+        case 's31':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col p-4 space-y-4 overflow-y-auto">
+              <h2 class="text-base font-bold text-slate-900">App Settings</h2>
+
+              <div class="bg-white border border-slate-200 rounded-xl p-3 space-y-3 text-xs">
+                <div class="flex justify-between items-center">
+                  <span>Push Delay Alerts</span>
+                  <input type="checkbox" checked class="rounded border-slate-300">
+                </div>
+                <div class="flex justify-between items-center">
+                  <span>Location Services</span>
+                  <input type="checkbox" checked class="rounded border-slate-300">
+                </div>
+                <div class="flex justify-between items-center">
+                  <span>Distance Units</span>
+                  <span class="font-mono text-slate-600">Kilometers (km)</span>
+                </div>
+              </div>
+
+              <button onclick="showScreen('s32')" class="w-full py-2 text-xs text-slate-600 bg-white border border-slate-200 rounded-lg">
+                Help & Support Center
+              </button>
+            </div>`;
+
+        case 's32':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col p-4 space-y-4 overflow-y-auto">
+              <h2 class="text-base font-bold text-slate-900">Help & Support</h2>
+
+              <div class="bg-white border border-slate-200 rounded-xl p-3 space-y-2 text-xs">
+                <div class="font-bold text-slate-800">Frequently Asked Questions</div>
+                <div class="text-[11px] text-slate-600 space-y-1">
+                  <p><strong>Q: How are synergy scores computed?</strong></p>
+                  <p class="text-slate-500">Scores cross-reference exact planetary ephemeris tables with target city latitude/longitude coordinates.</p>
+                </div>
+              </div>
+
+              <button onclick="alert('Support ticket form submitted!');" class="w-full py-2.5 bg-slate-900 text-white font-semibold text-xs rounded-xl">
+                Contact Technical Support
+              </button>
+            </div>`;
+
+        case 'state-loading':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center space-y-4">
+              <div class="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+              <div>
+                <h3 class="text-sm font-bold text-amber-400">Computing Astro Synergy Engine</h3>
+                <p class="text-xs text-slate-400 mt-1">Cross-referencing Swiss Ephemeris with 14,000+ city coordinates...</p>
+              </div>
+              <button onclick="showScreen('s18')" class="text-xs text-slate-500 underline">Simulate Finish →</button>
+            </div>`;
+
+        case 'state-empty':
+          return `
+            <div class="h-full bg-slate-50 text-slate-900 flex flex-col items-center justify-center p-6 text-center space-y-3">
+              <i data-lucide="bookmark-x" class="w-12 h-12 text-slate-300"></i>
+              <div>
+                <h3 class="text-sm font-bold text-slate-800">No Saved Locations Yet</h3>
+                <p class="text-xs text-slate-500 mt-1">Bookmark high synergy cities on the map or search hub to build your list.</p>
+              </div>
+              <button onclick="showScreen('s09')" class="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg">
+                Explore Map Now
+              </button>
+            </div>`;
+
+        case 'state-error':
+          return `
+            <div class="h-full bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center space-y-4">
+              <i data-lucide="wifi-off" class="w-12 h-12 text-rose-400"></i>
+              <div>
+                <h3 class="text-sm font-bold text-white">Connection Error</h3>
+                <p class="text-xs text-slate-400 mt-1">Unable to sync schedule feed. Please check your network and retry.</p>
+              </div>
+              <button onclick="showScreen('s08')" class="px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-lg">
+                Retry Connection
+              </button>
+            </div>`;
+
+        case 'state-permission':
+          return `
+            <div class="h-full bg-slate-900/90 text-white flex flex-col items-center justify-center p-6 text-center space-y-4">
+              <div class="p-4 bg-slate-800 border border-slate-700 rounded-2xl space-y-3 max-w-xs">
+                <i data-lucide="map-pin" class="w-10 h-10 text-blue-400 mx-auto"></i>
+                <h3 class="text-sm font-bold text-white">Enable Location Services?</h3>
+                <p class="text-xs text-slate-400">NANCY uses your GPS to surface nearby train stations and compute distance to synergy lines.</p>
+                <div class="space-y-1.5 pt-2">
+                  <button onclick="showScreen('s09')" class="w-full py-2 bg-blue-600 text-white font-semibold text-xs rounded-lg">Allow While Using App</button>
+                  <button onclick="showScreen('s09')" class="w-full py-2 text-slate-400 text-xs">Don't Allow</button>
+                </div>
+              </div>
+            </div>`;
+
+        default:
+          return `<div class="p-6 text-xs text-slate-500">Screen ${id} template ready.</div>`;
+      }
+    }
+
+    // FLOW SIMULATION CONTROLLER
+    function runFlow(flowKey) {
+      const label = document.getElementById('active-flow-label');
+      switch(flowKey) {
+        case 'A':
+          label.innerText = 'Flow A: New User Onboarding';
+          showScreen('s01');
+          break;
+        case 'B':
+          label.innerText = 'Flow B: Returning User Login';
+          showScreen('s05');
+          break;
+        case 'C':
+          label.innerText = 'Flow C: Transit Lookup';
+          showScreen('s11');
+          break;
+        case 'D':
+          label.innerText = 'Flow D: City Discovery';
+          showScreen('s09');
+          break;
+        case 'E':
+          label.innerText = 'Flow E: Astro Synergy Calc & Paywall';
+          showScreen('s15');
+          break;
+      }
+    }
+
+    // SWITCH SCREEN
+    function showScreen(screenId) {
+      renderScreen(screenId);
+    }
+
+    // TOGGLE PAYWALL SUBSCRIBER STATE
+    function togglePaywallState() {
+      isUserPaidSubscriber = !isUserPaidSubscriber;
+      document.getElementById('user-tier-text').innerText = isUserPaidSubscriber ? 'Paid Pro Member' : 'Free Plan';
+      const badge = document.getElementById('user-tier-badge');
+      if (isUserPaidSubscriber) {
+        badge.classList.remove('bg-amber-500/10', 'text-amber-400');
+        badge.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40');
+      } else {
+        badge.classList.remove('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40');
+        badge.classList.add('bg-amber-500/10', 'text-amber-400');
+      }
+      renderScreen(currentScreenId);
+    }
+
+    // TOGGLE BACKEND ANNOTATIONS PANEL
+    function toggleAnnotations() {
+      showTechAnnotations = !showTechAnnotations;
+      const panel = document.getElementById('technical-spec-panel');
+      const btn = document.getElementById('anno-toggle-btn');
+      if (showTechAnnotations) {
+        panel.classList.remove('hidden');
+        btn.innerText = 'Backend Specs: ON';
+        btn.classList.replace('bg-slate-800', 'bg-slate-700');
+      } else {
+        panel.classList.add('hidden');
+        btn.innerText = 'Backend Specs: OFF';
+        btn.classList.replace('bg-slate-700', 'bg-slate-800');
+      }
+    }
+
+    // SWITCH BETWEEN MOBILE FRAME AND ADMIN DASHBOARD
+    function switchView(mode) {
+      const appContainer = document.getElementById('app-viewport-container');
+      const adminContainer = document.getElementById('admin-portal-container');
+      const appBtn = document.getElementById('app-view-btn');
+      const adminBtn = document.getElementById('admin-view-btn');
+
+      if (mode === 'admin') {
+        appContainer.classList.add('hidden');
+        adminContainer.classList.remove('hidden');
+        appBtn.classList.replace('bg-blue-600', 'bg-slate-700');
+        adminBtn.classList.replace('bg-slate-700', 'bg-blue-600');
+      } else {
+        adminContainer.classList.add('hidden');
+        appContainer.classList.remove('hidden');
+        adminBtn.classList.replace('bg-blue-600', 'bg-slate-700');
+        appBtn.classList.replace('bg-slate-700', 'bg-blue-600');
+      }
+    }
+
+    // FILTER SCREENS IN SIDEBAR
+    function filterScreens() {
+      const q = document.getElementById('screen-search').value.toLowerCase();
+      document.querySelectorAll('.screen-nav-btn').forEach(btn => {
+        const txt = btn.innerText.toLowerCase();
+        if (txt.includes(q)) {
+          btn.style.display = 'flex';
+        } else {
+          btn.style.display = 'none';
+        }
+      });
+    }
+
+    // INITIALIZE DEFAULT VIEW ON LOAD
+    window.onload = () => {
+      renderScreen('s01');
+    };
+  </script>
+</body>
+</html>
